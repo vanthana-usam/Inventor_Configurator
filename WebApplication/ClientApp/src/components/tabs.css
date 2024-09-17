@@ -1,0 +1,39 @@
+
+.tabsContainer {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+    padding-top: 20px;
+    overflow: hidden;
+    font-size: larger;
+    background-color: #363634;
+}
+
+.tab-label {
+    font-size: 18px; /* Adjust this value as needed */
+    font-weight: bold;
+    color: whitesmoke;
+
+  }
+
+/* .tabContent {
+    border-style: solid;
+    border-width: 8px;
+    border-color: #D9D9D9;
+} */
+
+.tabContent#model,
+.tabContent#drawing
+{
+    border-style: none;
+}
+
+.inRow {
+    display: flex;
+    flex-direction: row;
+}
+
+/* set style for an element made by React component */
+.fullheight__content {
+    overflow: hidden;
+}

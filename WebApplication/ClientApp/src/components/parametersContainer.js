@@ -1,0 +1,127 @@
+ 
+
+import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import './parametersContainer.css';
+import Parameter from './parameter';
+import { getActiveProject, getParameters, getUpdateParameters, modalProgressShowing, updateFailedShowing, errorData } from '../reducers/mainReducer';
+import { fetchParameters, resetParameters, updateModelWithParameters } from '../actions/parametersActions';
+import { showModalProgress, showUpdateFailed, invalidateDrawing } from '../actions/uiFlagsActions';
+import Button from '@hig/button';
+import Tooltip from '@hig/tooltip';
+import { Alert24 } from "@hig/icons";
+
+import ModalProgress from './modalProgress';
+import ModalFail from './modalFail';
+import { fullWarningMsg } from '../utils/conversion';
+
+export class ParametersContainer extends Component {
+
+    componentDidMount() {
+        this.props.fetchParameters(this.props.activeProject.id);
+    }
+
+    componentDidUpdate(prevProps) {
+        // fetch parameters when params UI was active before projects initialized
+        if (this.props.activeProject.id !== prevProps.activeProject.id)
+            this.props.fetchParameters(this.props.activeProject.id);
+    }
+
+    updateClicked() {
+        this.props.updateModelWithParameters(this.props.activeProject.id, this.props.projectUpdateParameters);
+        // mark drawing as not valid if any available
+        this.props.invalidateDrawing();
+    }
+
+    onUpdateFailedCloseClick() {
+        this.props.showUpdateFailed(false);
+    }
+
+    onModalProgressClose() {
+        this.props.hideModalProgress();
+    }
+
+    render() {
+        const parameterList = this.props.activeProject ? this.props.projectUpdateParameters : [];
+        const buttonsContainerClass = parameterList ? "buttonsContainer" : "buttonsContainer hidden";
+
+        // if model adopted with warning - then button should became white and have a tooltip with warning details
+        const adoptWarning = this.props.adoptWarning;
+        const tooltipProps = adoptWarning ? { openOnHover: true, content: () => <div className="warningButtonTooltip">{ adoptWarning }</div>  } : { open: false };
+        const buttonProps = adoptWarning ? { type:"secondary", icon: <Alert24 style={ { color: "orange" }} /> } : { type: "primary" };
+
+        return (
+            <div className="parametersContainer">
+                <div className="pencilContainer">
+                </div>
+                <div className="parameters">
+                {
+                    parameterList ?
+                        parameterList.map((parameter, index) => (<Parameter key={index} parameter={parameter}/>))
+                        : "No parameters are found"
+                }
+                </div>
+                <hr className="parametersSeparator"/>
+                <div className={buttonsContainerClass}>
+                    <Button style={{width: '125px'}}
+                        size="standard"
+                        title="Reset"
+                        type="secondary"
+                        width="grow"
+                        onClick={() => {this.props.resetParameters(this.props.activeProject.id, this.props.projectSourceParameters);}}
+                    />
+                    <div style={{width: '14px'}}/>
+                    <div width="grow" /*this div makes the size of the Button below not to be broken by the encapsulating Tooltip*/>
+                        <Tooltip { ...tooltipProps } className="paramTooltip" anchorPoint="top-center">
+                            <Button id="updateButton"
+                                style={{width: '125px'}}
+                                { ...buttonProps }
+                                size="standard"
+                                title= "Update"
+                                width="grow"
+                                onClick={() => this.updateClicked()}/>
+                        </Tooltip>
+                    </div>
+
+                    {this.props.modalProgressShowing &&
+                        <ModalProgress
+                            open={this.props.modalProgressShowing}
+                            title="Updating Project"
+                            doneTitle="Update Finished"
+                            label={this.props.activeProject.id}
+                            icon="/Assembly_icon.svg"
+                            onClose={() => this.onModalProgressClose()}
+                            warningMsg={this.props.adoptWarning}
+                        />
+                    }
+                    {this.props.updateFailedShowing &&
+                        <ModalFail
+                            open={this.props.updateFailedShowing}
+                            title="Update Failed"
+                            contentName="Project:"
+                            label={this.props.activeProject.id}
+                            onClose={() => this.onUpdateFailedCloseClick()}
+                            errorData={this.props.errorData}/>
+                    }
+                </div>
+            </div>
+        );
+    }
+}
+
+/* istanbul ignore next */
+export default connect(function (store) {
+    const activeProject = getActiveProject(store);
+    const adoptWarning = fullWarningMsg(activeProject.adoptWarnings);
+
+    return {
+        activeProject: activeProject,
+        modalProgressShowing: modalProgressShowing(store),
+        updateFailedShowing: updateFailedShowing(store),
+        errorData: errorData(store),
+        projectSourceParameters: getParameters(activeProject.id, store),
+        projectUpdateParameters: getUpdateParameters(activeProject.id, store),
+        adoptWarning: adoptWarning
+    };
+}, { fetchParameters, resetParameters, updateModelWithParameters, showModalProgress, showUpdateFailed, invalidateDrawing,
+    hideModalProgress: () => async (dispatch) => { dispatch(showModalProgress(false)); } })(ParametersContainer);
