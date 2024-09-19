@@ -33,7 +33,7 @@ RUN npm run build
 COPY --from=dotnet-builder /app/build /csharp-plugin/
 
 # Expose the port for the Node.js app (if necessary)
-EXPOSE 3000:8080
+EXPOSE 3000
 
 # Start the application
 CMD ["npm", "start"]
