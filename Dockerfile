@@ -41,7 +41,7 @@ COPY --from=node-builder /INVENTOR_CONFIG/WebApplication/ClientApp/build ./Clien
 
 # Expose ports for both applications
 EXPOSE 3000 
-EXPOSE 5001
+EXPOSE 5000
 
 # Start the backend application
 CMD ["dotnet", "WebApplication.dll"]
