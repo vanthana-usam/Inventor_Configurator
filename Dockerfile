@@ -1,5 +1,5 @@
 # First Stage: Build the C# application
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS dotnet-builder
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS dotnet-builder
 WORKDIR /INVENTOR_CONFIG
 
 # Copy the solution and the necessary project files
@@ -29,11 +29,20 @@ COPY WebApplication/ClientApp/ ./
 # Build the Node.js application
 RUN npm run build
 
-# Copy the C# build artifacts from the first stage
-COPY --from=dotnet-builder /app/build /csharp-plugin/
+# Final Stage: Combine and Serve Both
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final-stage
+WORKDIR /app
 
-# Expose the port for the Node.js app (if necessary)
-EXPOSE 3000
+# Copy C# backend build artifacts
+COPY --from=dotnet-builder /app/build /app/
 
-# Start the application
-CMD ["npm", "start"]
+# Copy Node.js frontend build artifacts
+COPY --from=node-builder /INVENTOR_CONFIG/WebApplication/ClientApp/build ./ClientApp/build/
+
+# Expose ports for both applications
+EXPOSE 3000 
+EXPOSE 5001
+
+# Start the backend application
+CMD ["dotnet", "WebApplication.dll"]
+
